@@ -5,108 +5,148 @@
 #                                                     +:+ +:+         +:+      #
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
-#    Created: 2020/09/02 09:46:11 by monoue            #+#    #+#              #
-#    Updated: 2020/09/07 08:08:58 by monoue           ###   ########.fr        #
+#    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
+#    Updated: 2020/09/08 14:40:08 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 FROM debian:buster
-# ENV DEBIAN_FRONTEND noninteractive
-
-# set	-e: エラー時（= exit 0 以外を返す時）に打ち止め
-#		-u: 未定義の変数を使おうとした場合に打ち止め
-#		-x: 実行コマンドとその引数をトレースとして出力
 
 # install WordPress dependencies
-RUN	set -eux; \
+RUN	set -ex; \
 		apt-get update; \
 		apt-get install -y --no-install-recommends \
-				# apt-utils \
+				apt-utils \
 				ca-certificates \
 				# git \
 				mariadb-client \
 				mariadb-server \
 				nginx \
-				# php7.3?
-				# php-bcmath \
-				# php-cgi \
-				# php-cli?
-				# php-common \
+				php-bcmath \
+				php-cgi \
+				php-common \
 				php-fpm \
-				# php-gd \
-				# php-gettext \
+				php-gd \
+				php-gettext \
 				php-mbstring \
 				php-mysql \
-				# php-net-socket \
-				# php-pear \
-				# php-xml-util \
-				# php-zip \
+				php-net-socket \
+				php-pear \
+				php-xml-util \
+				php-zip \
 				# procps \
 				# unzip \
 				supervisor \
 				# vim?
 				wget \
 		; \
-		rm -rf /var/lib/apt/lists/*; \
-		\
-# set MySQL
+		rm -rf /var/lib/apt/lists/*
+
+# set MariaDB
+ENV	DATABASE	wpdb
+ENV	USER		wpuser
+ENV	HOST		localhost
+ENV	PASSWORD	dbpassword
+
+RUN	set -eux; \
 		service mysql start; \
-		mysql --execute "CREATE DATABASE wpdb;"; \
-		mysql -e "CREATE USER 'wpuser'@'localhost' IDENTIFIED BY 'dbpassword';"; \
-		mysql -e "GRANT ALL ON wpdb.* TO 'wpuser'@'localhost';"
+		mysql -e "CREATE DATABASE $DATABASE;"; \
+		mysql -e "CREATE USER '$USER'@'$HOST' IDENTIFIED BY '$PASSWORD';"; \
+		mysql -e "GRANT ALL ON $DATABASE.* TO '$USER'@'$HOST';"
 
 # set WordPress
-WORKDIR	/var/www/html
+ENV	WORDPRESS_DOWNLOAD_URL https://wordpress.org/latest.tar.gz
+# ENV	WORDPRESS_INSTALL /var/www/html
+# ENV	WORDPRESS_CONTENT $WORDPRESS_INSTALL/wordpress
+ENV	WORDPRESS_CONTENT /bar/www/html/wordpress
+
 RUN	set -eux; \
-		wget https://wordpress.org/latest.tar.gz; \
-		tar -xvf latest.tar.gz; \
-		rm latest.tar.gz; \
-		chown -R www-data:www-data wordpress
-COPY ./srcs/wp-config.php /var/www/html/wordpress/wp-config.php
+		wget -O wordpress.tar.gz "$WORDPRESS_DOWNLOAD_URL"; \
+		# mkdir -p "$WORDPRESS_INSTALL"; \
+		mkdir -p "$WORDPRESS_CONTENT"; \
+		tar -xzf wordpress.tar.gz -C "$WORDPRESS_CONTENT" --strip-components=1; \
+		rm wordpress.tar.gz; \
+		chown -R www-data:www-data "$WORDPRESS_CONTENT"
+COPY ./srcs/wp-config.php "$WORDPRESS_CONTENT/wp-config.php"
 
 # set phpMyAdmin
+ENV PHPMYADMIN_VERSION 5.0.2
+ENV	PHPMYADMIN_DOWNLOAD_URL https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMIN_VERSION/phpMyAdmin-$PHPMYADMIN_VERSION-all-languages.tar.gz
+# ENV	PHPMYADMIN_INSTALL /var/www/html
+# ENV	PHPMYADMIN_CONTENT $PHPMYADMIN_INSTALL/phpMyAdmin
+ENV	PHPMYADMIN_CONTENT /var/www/html/phpMyAdmin
+
 RUN	set -eux; \
-		wget https://files.phpmyadmin.net/phpMyAdmin/5.0.2/phpMyAdmin-5.0.2-all-languages.tar.gz ;\
-		tar -xvf phpMyAdmin-5.0.2-all-languages.tar.gz; \
-		rm phpMyAdmin-5.0.2-all-languages.tar.gz; \
-		mv phpMyAdmin-5.0.2-all-languages phpMyAdmin
+		wget -O phpmyadmin.tar.gz "$PHPMYADMIN_DOWNLOAD_URL"; \
+		# mkdir -p "$PHPMYADMIN_INSTALL"; \
+		mkdir -p "$PHPMYADMIN_CONTENT"; \
+		tar -xzf phpmyadmin.tar.gz -C "$PHPMYADMIN_CONTENT" --strip-components=1; \
+		rm phpmyadmin.tar.gz
+# これは、どうせ最後に上書きされているから、そもそも不要なのでは
+COPY ./srcs/default.conf /etc/nginx/sites-available/default
+# COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
 
 # set SSL
-WORKDIR	/etc/nginx/ssl
+ENV	SSL_DIR /etc/nginx/ssl
+ENV	KEY server.key
+ENV	CSR server.csr
+ENV CRT server.crt
+
 RUN	set -eux; \
-		# 秘密鍵の作成
-		openssl genrsa \
-			-out server.key 2048; \
+		mkdir -p "$SSL_DIR"; \
 		\
-		# CSR 関連 -> openssl req コマンド
-		# -new オプション -> 作成
+		openssl genrsa \
+			-out "$SSL_DIR/$KEY" 2048; \
+		\
 		openssl req -new \
 			-subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=monoue" \
-			# 作成に使用する秘密鍵を指定
-			# これが、CSR に含まれる公開鍵と対になる
-			-key server.key \
-			-out server.csr; \
+			# -subj "/CN=localhost/DNS=localhost" \
+			# -subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=localhost" \
+			-key "$SSL_DIR/$KEY" \
+			-out "$SSL_DIR/$CSR"; \
 		\
-		# こちらは localhost としてあるので、上ので動かなければこちらを使う。
-		# openssl req -new -key server.key -out server.csr -subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42 Tokyo/OU=42 cursus/CN=localhost"; \
-		# openssl X509 コマンド
-		# -req オプションによって、入力に CSR を使用するようになる
 		openssl x509 -req \
 			-days 3650 \
-			# 自己署名を行う秘密鍵を指定
-			-signkey server.key \
-			# CSR を指定
-			-in server.csr \
-			# 作成する SSL サーバー証明書のファイル名を指定
-			-out server.crt \
+			-signkey "$SSL_DIR/$KEY" \
+			-in "$SSL_DIR/$CSR" \
+			-out "$SSL_DIR/$CRT"
 
-COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
+# set supervisor
+# supervisor = プロセス管理ツール。これにより、実行したいプロセスを再起動できる。
+# supervisor の設定ファイルのデフォの置き場は、この conf.d
+COPY ./srcs/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+RUN  chmod +x /etc/supervisor/conf.d/supervisord.conf
+# 元はこう
+# RUN  chmod 777 /etc/supervisor/conf.d/supervisord.conf
 
+# set entrykit
+ENV	ENTRYKIT_VERSION 0.4.0
+ENV	ENTRYKIT_OS Linux
+# ENV	ENTRYKIT_DOWNLOAD_URL https://github.com/progrium/entrykit/releases/download/v$ENTRYKIT_VERSION/entrykit_$ENTRYKIT_VERSION_$ENTRYKIT_OS_x86_64.tgz
+ENV	ENTRYKIT_DOWNLOAD_URL https://github.com/progrium/entrykit/releases/download/v0.4.0/entrykit_0.4.0_Linux_x86_64.tgz
+ENV	ENTRYKIT_INSTALL /bin
 
-
-
+RUN	set -eux; \
+		wget -O entrykit.tgz "$ENTRYKIT_DOWNLOAD_URL"; \
+		# mkdir -p "$ENTRYKIT_INSTALL"; \
+		# mkdir -p "$ENTRYKIT_CONTENT"; \
+		tar -xzf entrykit.tgz -C "$ENTRYKIT_INSTALL"; \
+		rm entrykit.tgz; \
+		chmod +x "$ENTRYKIT_INSTALL/entrykit"; \
+		# render などのサブコマンドのシンボリックリンクを作成する
+		entrykit --symlink
+#wordpress のためのバーチャルホスト設定ファイル
+COPY ./srcs/wordpress.tmpl /etc/nginx/sites-available/wordpress.tmpl
+# 元はこれ
+# COPY ./srcs/default.tmpl /etc/nginx/sites-available/default.tmpl
 
 # EXPOSE 80 443
+
+ENTRYPOINT	["render", "/etc/nginx/sites-available/wordpress","--","/usr/bin/supervisord"]
+#	元はこう
+# ENTRYPOINT	["render", "/etc/nginx/sites-available/default.conf","--","/usr/bin/supervisord"]
+
+#CMD で、デフォの引数として on を渡したい
 
 # csr: Certificate Sigining Request 証明書の申請時に提出するファイル
 # crt: CeRTificate いわゆる SSL 証明書。言い換えれば、署名付き公開鍵。
