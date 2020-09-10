@@ -6,7 +6,7 @@
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
-#    Updated: 2020/09/11 00:17:40 by monoue           ###   ########.fr        #
+#    Updated: 2020/09/11 00:26:39 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,7 +83,7 @@ RUN	set -eux; \
 		tar -xzf phpmyadmin.tar.gz -C "$PHPMYADMIN_CONTENT" --strip-components=1; \
 		rm phpmyadmin.tar.gz
 # これは、どうせ最後に上書きされているから、そもそも不要なのでは
-COPY ./srcs/default.conf /etc/nginx/sites-available/default.conf
+# COPY ./srcs/default.conf /etc/nginx/sites-available/default.conf
 # COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
 
 # set SSL

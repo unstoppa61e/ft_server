@@ -1,28 +1,29 @@
 server {
     listen 80;
+    listen [::]:80 default_server;
     return 301 https://$host$request_uri;
 }
 
+
 server {
-	listen 443;
+	listen 443 ssl default_server;
+	listen [::]:443 ssl default_server;
 
 	ssl on;
-	root				/var/www/html/wordpress;
-	index index.php index.html index.htm index.nginx-debian.html;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html index.php;
 
 	server_name _;
 
-	access_log			/var/log/nginx/wordpress_access.log;
-	error_log			/var/log/nginx/wordpress_error.log;
+	access_log /var/log/nginx/access.log;
+	error_log /var/log/nginx/error.log;
 
-	ssl_certificate		/etc/nginx/ssl/server.csr
-	ssl_certificate_key	/etc/nginx/ssl/server.key
-
-	client_max_body_size 64M;
+	ssl_certificate     /etc/nginx/ssl/server.crt;
+   	ssl_certificate_key /etc/nginx/ssl/server.key;
 
 	location / {
 		autoindex {{ var "AUTOINDEX" | default "on" }};
-		try_files $uri $uri/ /index.php?$args;
+		try_files $uri $uri/ =404;
 	}
 
 	location ~ \.php$ {
@@ -34,5 +35,25 @@ server {
 		fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
 		fastcgi_pass unix:/run/php/php7.3-fpm.sock;
 		fastcgi_index index.php;
-	}
+			}
 }
+
+
+# Virtual Host configuration for example.com
+#
+# You can move that to a different file under sites-available/ and symlink that
+# to sites-enabled/ to enable it.
+#
+#server {
+#	listen 80;
+#	listen [::]:80;
+#
+#	server_name example.com;
+#
+#	root /var/www/example.com;
+#	index index.html;
+#
+#	location / {
+#		try_files $uri $uri/ =404;
+#	}
+#}
