@@ -6,7 +6,7 @@
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
-#    Updated: 2020/09/10 15:09:47 by monoue           ###   ########.fr        #
+#    Updated: 2020/09/11 00:04:00 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -58,7 +58,7 @@ RUN	set -eux; \
 ENV	WORDPRESS_DOWNLOAD_URL https://wordpress.org/latest.tar.gz
 # ENV	WORDPRESS_INSTALL /var/www/html
 # ENV	WORDPRESS_CONTENT $WORDPRESS_INSTALL/wordpress
-ENV	WORDPRESS_CONTENT /bar/www/html/wordpress
+ENV	WORDPRESS_CONTENT /var/www/html/wordpress
 
 RUN	set -eux; \
 		wget -O wordpress.tar.gz "$WORDPRESS_DOWNLOAD_URL"; \
