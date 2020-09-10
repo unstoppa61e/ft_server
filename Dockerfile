@@ -6,7 +6,7 @@
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
-#    Updated: 2020/09/11 00:04:00 by monoue           ###   ########.fr        #
+#    Updated: 2020/09/11 00:17:40 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -83,8 +83,8 @@ RUN	set -eux; \
 		tar -xzf phpmyadmin.tar.gz -C "$PHPMYADMIN_CONTENT" --strip-components=1; \
 		rm phpmyadmin.tar.gz
 # これは、どうせ最後に上書きされているから、そもそも不要なのでは
-# COPY ./srcs/default.conf /etc/nginx/sites-available/default
-COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
+COPY ./srcs/default.conf /etc/nginx/sites-available/default.conf
+# COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
 
 # set SSL
 ENV	SSL_DIR /etc/nginx/ssl
@@ -120,8 +120,8 @@ RUN  chmod +x /etc/supervisor/conf.d/supervisord.conf
 # RUN  chmod 777 /etc/supervisor/conf.d/supervisord.conf
 
 # set entrykit
-ENV	ENTRYKIT_VERSION 0.4.0
-ENV	ENTRYKIT_OS Linux
+# ENV	ENTRYKIT_VERSION 0.4.0
+# ENV	ENTRYKIT_OS Linux
 # ENV	ENTRYKIT_DOWNLOAD_URL https://github.com/progrium/entrykit/releases/download/v$ENTRYKIT_VERSION/entrykit_$ENTRYKIT_VERSION_$ENTRYKIT_OS_x86_64.tgz
 ENV	ENTRYKIT_DOWNLOAD_URL https://github.com/progrium/entrykit/releases/download/v0.4.0/entrykit_0.4.0_Linux_x86_64.tgz
 ENV	ENTRYKIT_INSTALL /bin
@@ -136,15 +136,15 @@ RUN	set -eux; \
 		# render などのサブコマンドのシンボリックリンクを作成する
 		entrykit --symlink
 #wordpress のためのバーチャルホスト設定ファイル
-COPY ./srcs/wordpress.tmpl /etc/nginx/sites-available/wordpress.tmpl
+# COPY ./srcs/wordpress.tmpl /etc/nginx/sites-available/wordpress.tmpl
 # 元はこれ
-# COPY ./srcs/default.tmpl /etc/nginx/sites-available/default.tmpl
+COPY ./srcs/default.tmpl /etc/nginx/sites-available/default.tmpl
 
 # EXPOSE 80 443
 
-ENTRYPOINT	["render", "/etc/nginx/sites-available/wordpress","--","/usr/bin/supervisord"]
+# ENTRYPOINT	["render", "/etc/nginx/sites-available/wordpress","--","/usr/bin/supervisord"]
 #	元はこう
-# ENTRYPOINT	["render", "/etc/nginx/sites-available/default.conf","--","/usr/bin/supervisord"]
+ENTRYPOINT	["render", "/etc/nginx/sites-available/default","--","/usr/bin/supervisord"]
 
 #CMD で、デフォの引数として on を渡したい
 
