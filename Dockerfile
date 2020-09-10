@@ -6,7 +6,7 @@
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
-#    Updated: 2020/09/08 14:40:08 by monoue           ###   ########.fr        #
+#    Updated: 2020/09/10 15:09:47 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -74,7 +74,7 @@ ENV PHPMYADMIN_VERSION 5.0.2
 ENV	PHPMYADMIN_DOWNLOAD_URL https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMIN_VERSION/phpMyAdmin-$PHPMYADMIN_VERSION-all-languages.tar.gz
 # ENV	PHPMYADMIN_INSTALL /var/www/html
 # ENV	PHPMYADMIN_CONTENT $PHPMYADMIN_INSTALL/phpMyAdmin
-ENV	PHPMYADMIN_CONTENT /var/www/html/phpMyAdmin
+ENV	PHPMYADMIN_CONTENT /var/www/html/phpmyadmin
 
 RUN	set -eux; \
 		wget -O phpmyadmin.tar.gz "$PHPMYADMIN_DOWNLOAD_URL"; \
@@ -83,8 +83,8 @@ RUN	set -eux; \
 		tar -xzf phpmyadmin.tar.gz -C "$PHPMYADMIN_CONTENT" --strip-components=1; \
 		rm phpmyadmin.tar.gz
 # これは、どうせ最後に上書きされているから、そもそも不要なのでは
-COPY ./srcs/default.conf /etc/nginx/sites-available/default
-# COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
+# COPY ./srcs/default.conf /etc/nginx/sites-available/default
+COPY ./srcs/wordpress.conf /etc/nginx/sites-available/wordpress.conf
 
 # set SSL
 ENV	SSL_DIR /etc/nginx/ssl
@@ -99,9 +99,9 @@ RUN	set -eux; \
 			-out "$SSL_DIR/$KEY" 2048; \
 		\
 		openssl req -new \
-			-subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=monoue" \
+			# -subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=monoue" \
 			# -subj "/CN=localhost/DNS=localhost" \
-			# -subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=localhost" \
+			-subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=localhost" \
 			-key "$SSL_DIR/$KEY" \
 			-out "$SSL_DIR/$CSR"; \
 		\
