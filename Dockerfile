@@ -6,7 +6,7 @@
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
-#    Updated: 2020/09/11 00:41:58 by monoue           ###   ########.fr        #
+#    Updated: 2020/09/11 15:05:21 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -52,6 +52,7 @@ RUN	set -eux; \
 
 # set WordPress
 ENV	WORDPRESS_DOWNLOAD_URL https://wordpress.org/latest.tar.gz
+
 ENV	WORDPRESS_CONTENT /var/www/html/wordpress
 
 RUN	set -eux; \
@@ -64,7 +65,9 @@ COPY ./srcs/wp-config.php "$WORDPRESS_CONTENT/wp-config.php"
 
 # set phpMyAdmin
 ENV PHPMYADMIN_VERSION 5.0.2
+
 ENV	PHPMYADMIN_DOWNLOAD_URL https://files.phpmyadmin.net/phpMyAdmin/$PHPMYADMIN_VERSION/phpMyAdmin-$PHPMYADMIN_VERSION-all-languages.tar.gz
+
 ENV	PHPMYADMIN_CONTENT /var/www/html/phpmyadmin
 
 RUN	set -eux; \
@@ -73,8 +76,9 @@ RUN	set -eux; \
 		tar -xzf phpmyadmin.tar.gz -C "$PHPMYADMIN_CONTENT" --strip-components=1; \
 		rm phpmyadmin.tar.gz
 
-# set SSL
+# set secure sockets layer
 ENV	SSL_DIR /etc/nginx/ssl
+
 ENV	KEY server.key
 ENV	CSR server.csr
 ENV CRT server.crt
@@ -82,14 +86,17 @@ ENV CRT server.crt
 RUN	set -eux; \
 		mkdir -p "$SSL_DIR"; \
 		\
+# generate a private key
 		openssl genrsa \
 			-out "$SSL_DIR/$KEY" 2048; \
 		\
+# generate a certificate signing request
 		openssl req -new \
 			-subj "/C=JP/ST=Tokyo/L=Minato-ku/O=42Tokyo/OU=42cursus/CN=localhost" \
 			-key "$SSL_DIR/$KEY" \
 			-out "$SSL_DIR/$CSR"; \
 		\
+# generate a self-signed certificate
 		openssl x509 -req \
 			-days 3650 \
 			-signkey "$SSL_DIR/$KEY" \
@@ -98,8 +105,12 @@ RUN	set -eux; \
 
 # set supervisor
 COPY ./srcs/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
-RUN  chmod +x /etc/supervisor/conf.d/supervisord.conf
+
+RUN chmod +x /etc/supervisor/conf.d/supervisord.conf
+
+# set Entrykit
 ENV	ENTRYKIT_DOWNLOAD_URL https://github.com/progrium/entrykit/releases/download/v0.4.0/entrykit_0.4.0_Linux_x86_64.tgz
+
 ENV	ENTRYKIT_INSTALL /bin
 
 RUN	set -eux; \
@@ -108,8 +119,9 @@ RUN	set -eux; \
 		rm entrykit.tgz; \
 		chmod +x "$ENTRYKIT_INSTALL/entrykit"; \
 		entrykit --symlink
+
 COPY ./srcs/default.tmpl /etc/nginx/sites-available/default.tmpl
 
-EXPOSE 80 443
+ENTRYPOINT	["render", "/etc/nginx/sites-available/default", "--", "/usr/bin/supervisord"]
 
-ENTRYPOINT	["render", "/etc/nginx/sites-available/default","--","/usr/bin/supervisord"]
+EXPOSE 80 443
