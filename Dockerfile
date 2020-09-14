@@ -6,7 +6,7 @@
 #    By: monoue <marvin@student.42.fr>              +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2020/09/07 10:53:22 by monoue            #+#    #+#              #
-#    Updated: 2020/09/11 15:05:21 by monoue           ###   ########.fr        #
+#    Updated: 2020/09/14 10:05:19 by monoue           ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -61,7 +61,10 @@ RUN	set -eux; \
 		tar -xzf wordpress.tar.gz -C "$WORDPRESS_CONTENT" --strip-components=1; \
 		rm wordpress.tar.gz; \
 		chown -R www-data:www-data "$WORDPRESS_CONTENT"
+
 COPY ./srcs/wp-config.php "$WORDPRESS_CONTENT/wp-config.php"
+
+RUN	chmod 777 "$WORDPRESS_CONTENT/wp-config.php"
 
 # set phpMyAdmin
 ENV PHPMYADMIN_VERSION 5.0.2
